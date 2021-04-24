@@ -160,5 +160,4 @@ WINNER          .STRINGZ	"You won!\n"
 DONEPROMPT      .STRINGZ    "Game over! Enter 'y' to play again.\n"
 GOODBYE         .STRINGZ	"Goodbye!"
 
-
 .END
