@@ -20,25 +20,42 @@ PUTS
 GETP1
 LEA R0, PPROMPT             ; display prompt
 PUTS
-LD R0, FORTYEIGHT
+LD R0, FORTYEIGHT           ; display "PLAYER1"
 ADD R0, R0 #1
 OUT
-LEA R0, EXC
-PUTS
+LD R0, NEWLINE
+OUT
 LEA R0, BEGINPROMPT
 PUTS
+LD R0, NEWLINE
+OUT
+
+; validate P1 input
+; input testers, -48 and -57 in R6, R5
+; leave R0 untouched to print out if bad
+LD R6, FORTYEIGHT           ; if CC is PZ we're good
+NOT R6, R6
+ADD R6, R6 #1
+LD R5, MINUS57              ; if CC is NZ we're good
 
 GETC                        ; get input
-LD R7, MINUS48              ; if CC is PZ we're good
-LD R5, MINUS57              ; if CC is NZ we're good
 ADD R2, R0 #0               ; store input into R2
-ADD R7, R0 R7               ; check CC
+ADD R7, R2 R6               ; check CC P1 input > 48
 BRn BADP1
+ADD R7, R2 R5               ; check CC P1 input < 57
+BRp BADP1
+
 GETC                        ; get the second digit
 ADD R3, R0 #0               ; store input input into R3
-ADD R5, R0 R5               ; store input into R3
-BRp BADP1                   ; check CC
+ADD R7, R3 R5               ; check CC
+BRp BADP1                   
 
+ADD R7, R3 R6
+BRn BADP1
+
+; save P1 input
+ST R2, P1ONE
+ST R3, P1TWO
 ; clean P1 input
 AND R2, R2 #15              ; clean 1st digit
 AND R3, R3 #15              ; clean 2nd digit
@@ -57,14 +74,18 @@ AND R6, R6 #0               ; clear R6
 ADD R6, R6 #5               ; 5 guesses
 BRnzp SKIPFIRST             ; if this is your first time here, don't go to invalid message
 
-BADINPUT
+BADP2
 OUT                         ; spit out P2's bad input
 LEA R0, INVALID             ; alert them that they input something wrong
 PUTS
+LD R0, NEWLINE
+OUT
 
 BADGUESS
 LEA R0, TRYAGAIN
 PUTS
+LD R0, NEWLINE
+OUT
 ADD R6, R6 #-1              ; decrement guess
 BRz P1WIN
 
@@ -83,31 +104,61 @@ PUTS
 LD R0, FORTYEIGHT
 ADD R0, R0 #2
 OUT
-LEA R0, EXC
-PUTS
+LD R0, NEWLINE
+OUT
 LEA R0, GAMEPROMPT
 PUTS
+LD R0, NEWLINE
+OUT
 LEA R0, BEGINPROMPT
 PUTS
-GETC                        ; get P2 input
+LD R0, NEWLINE
+OUT
 
 ; check if P2 input is valid
-LD R7, MINUS48              ; if CC is PZ we're good
+; input testers, -48 and -57 in R6, R5
+; leave R0 untouched to print out if bad
+LD R4, FORTYEIGHT           ; if CC is PZ we're good
+NOT R4, R4
+ADD R4, R4 #1
 LD R5, MINUS57              ; if CC is NZ we're good
+
+GETC                        ; get P2 input
 ADD R2, R0 #0               ; store input into R2
-ADD R7, R0 R7               ; check CC
-BRn BADINPUT
+ADD R7, R2 R4               ; check CC P1 input > 48
+BRn BADP2
+ADD R7, R2 R5               ; check CC P1 input < 57
+BRp BADP2
+
 GETC                        ; get the second digit
 ADD R3, R0 #0               ; store input input into R3
-ADD R5, R0 R5               ; store input into R3
-BRp BADINPUT                ; check CC
+ADD R7, R3 R5               ; check CC
+BRp BADP2                   
+
+ADD R7, R3 R4
+BRn BADP2
+; LD R7, FORTYEIGHT           ; if CC is PZ we're good
+; NOT R7, R7
+; ADD R7, R7 #1
+; LD R5, MINUS57              ; if CC is NZ we're good
+; ADD R2, R0 #0               ; store input into R2
+; ADD R7, R0 R7               ; check CC
+; BRn BADINPUT
+; GETC                        ; get the second digit
+; ADD R3, R0 #0               ; store input input into R3
+; ADD R5, R0 R5               ; store input into R3
+; BRp BADINPUT                ; check CC
 
 ; clean P2 input
 AND R2, R2 #15              ; clean 1st digit
 AND R3, R3 #15              ; clean 2nd digit
-AND R5, R5 #0               ; clear R5
-ADD R5, R5 #10              ; set counter to multiply by 10
 
+; reset registers
+AND R4, R4 #0               ; clear R5
+AND R5, R5 #0               ; clear R5
+AND R7, R7 #0               ; clear R5
+
+ADD R5, R5 #10              ; set counter to multiply by 10
 MULTIPLYFIRST2              ; multiply first digit into R4 by 10
 ADD R4, R2 R4
 ADD R5, R5 #-1
@@ -125,11 +176,15 @@ BRp LOW
 ; too high
 LEA R0, TOOHIGH
 PUTS
+LD R0, NEWLINE
+OUT
 BRnzp BADGUESS
 
 LOW
 LEA R0, TOOLOW
 PUTS
+LD R0, NEWLINE
+OUT
 BRnzp BADGUESS
 
 WON                         ; sent here if P2 won
@@ -149,16 +204,19 @@ ADD R0, R0 #2
 OUT
 LEA R0, WINS
 PUTS
-LEA R0, EXC
-PUTS
+LD R0, NEWLINE
+OUT
 BRnzp GAMEOVER
 
 P1WIN
 AND R0, R0 #2               ; check if P1 input is single digit
-BRz SINGLEDIGIT
+BRz SINGLEDIGIT             
 
-AND R0, R0 #0               ; two digits were entered, have to ASCIIfy both
-
+LD R0, P1ONE                ; load stored P1 input data, first digit
+OUT
+LD R0, P1TWO                ; load stored P1 input data, second digit
+OUT
+BRnzp P1PROMPT              ; don't worry about single digit
 
 SINGLEDIGIT
 LD R0, FORTYEIGHT           ; for ASCIIing
@@ -175,8 +233,9 @@ ADD R0, R0 #1
 OUT
 LEA R0, WINS
 PUTS
-LEA R0, EXC
-PUTS
+LD R0, NEWLINE
+OUT
+
 
 GAMEOVER
 LEA R0, DONEPROMPT          ; check if user wants to play again
@@ -189,22 +248,23 @@ ADD R0, R0 R1
 BRz REZERO
 
 HALT
-MINUS48         .FILL       #-48
+P1ONE           .FILL       #0
+P1TWO           .FILL	    #0
+NEWLINE         .FILL       x000A
 MINUS57         .FILL       #-57
 TESTAGAIN       .FILL       #-121
 FORTYEIGHT      .FILL       #48
 
 PPROMPT         .STRINGZ	"\nPLAYER"
-EXC             .STRINGZ    "!\n"
-BEGINPROMPT     .STRINGZ	"Enter two digits between 0-99, e.g. input 01 for 1.\n"
-GAMEPROMPT      .STRINGZ    "GUESS WHAT P1 ENTERED NOW!\n"
-INVALID         .STRINGZ	"? THAT'S INVALID INPUT! COME ON NOW!\n"
-TRYAGAIN        .STRINGZ    "YOU'VE USED UP A GUESS P2!\n"
-TOOHIGH         .STRINGZ    "Too big.\n"
-TOOLOW          .STRINGZ    "Too small.\n"
-WINS            .STRINGZ    " Wins"
-WIN1            .STRINGZ	" was the correct answer.\n"
-WIN2            .STRINGZ	" guess(es).\n"
-DONEPROMPT      .STRINGZ    "Game over! Enter 'y' to play again.\n"
+BEGINPROMPT     .STRINGZ	"Enter TWO digits between 0-99, e.g. input 01 for 1."
+GAMEPROMPT      .STRINGZ    "GUESS WHAT P1 ENTERED NOW!"
+INVALID         .STRINGZ	"? THAT'S INVALID INPUT! COME ON NOW!"
+TRYAGAIN        .STRINGZ    "YOU'VE USED UP A GUESS P2!"
+TOOHIGH         .STRINGZ    "Too big"
+TOOLOW          .STRINGZ    "Too small"
+WINS            .STRINGZ    " Wins"  ; no newline
+WIN1            .STRINGZ	" was the correct answer"
+WIN2            .STRINGZ	" guess(es) used."
+DONEPROMPT      .STRINGZ    "Game over! Enter 'y' to play again"
 
 .END
