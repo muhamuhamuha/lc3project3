@@ -17,13 +17,16 @@ OUT
 LEA R0, INVALID
 PUTS
 
-
 GETP1
-LEA R0, P1PROMPT            ; display prompt
+LEA R0, PPROMPT             ; display prompt
+PUTS
+LD R0, FORTYEIGHT
+ADD R0, R0 #1
+OUT
+LEA R0, EXC
 PUTS
 LEA R0, BEGINPROMPT
 PUTS
-
 
 GETC                        ; get input
 LD R7, MINUS48              ; if CC is PZ we're good
@@ -39,7 +42,6 @@ BRp BADP1                   ; check CC
 ; clean P1 input
 AND R2, R2 #15              ; clean 1st digit
 AND R3, R3 #15              ; clean 2nd digit
-
 
 ADD R1, R1 #10              ; counter to multiply first digit by 10
 MULTIPLYFIRST1              ; loop to multiply first digit by 10
@@ -64,7 +66,7 @@ BADGUESS
 LEA R0, TRYAGAIN
 PUTS
 ADD R6, R6 #-1              ; decrement guess
-BRz GAMEOVER
+BRz P1WIN
 
 SKIPFIRST
 ; clear registers for peace of mind except R1 := P1 input and R6 := guesses
@@ -76,7 +78,12 @@ AND R5, R6 #0
 AND R7, R7 #0
 
 
-LEA R0, P2PROMPT
+LEA R0, PPROMPT
+PUTS
+LD R0, FORTYEIGHT
+ADD R0, R0 #2
+OUT
+LEA R0, EXC
 PUTS
 LEA R0, GAMEPROMPT
 PUTS
@@ -126,9 +133,50 @@ PUTS
 BRnzp BADGUESS
 
 WON                         ; sent here if P2 won
-LEA R0, WINNER
+AND R0, R0 #0               ; clear R0 to display # of guesses
+ADD R0, R6 #-5              
+NOT R0, R0
+ADD R0, R0 #1               ; negated
+LD R7, FORTYEIGHT           
+ADD R0, R0 R7               ; convert guesses to ascii
+OUT
+LEA R0, WIN2
 PUTS
+LEA R0, PPROMPT
+PUTS
+LD R0, FORTYEIGHT
+ADD R0, R0 #2
+OUT
+LEA R0, WINS
+PUTS
+LEA R0, EXC
+PUTS
+BRnzp GAMEOVER
 
+P1WIN
+AND R0, R0 #2               ; check if P1 input is single digit
+BRz SINGLEDIGIT
+
+AND R0, R0 #0               ; two digits were entered, have to ASCIIfy both
+
+
+SINGLEDIGIT
+LD R0, FORTYEIGHT           ; for ASCIIing
+ADD R0, R1 R0               ; R1 := P1 input
+OUT
+
+P1PROMPT
+LEA R0, WIN1                ; display winner prompt
+PUTS
+LEA R0, PPROMPT
+PUTS
+LD R0, FORTYEIGHT
+ADD R0, R0 #1
+OUT
+LEA R0, WINS
+PUTS
+LEA R0, EXC
+PUTS
 
 GAMEOVER
 LEA R0, DONEPROMPT          ; check if user wants to play again
@@ -140,24 +188,23 @@ LD R1, TESTAGAIN            ; check if players want to play again
 ADD R0, R0 R1
 BRz REZERO
 
-LEA R0, GOODBYE             ; done for good
-PUTS
-
 HALT
 MINUS48         .FILL       #-48
 MINUS57         .FILL       #-57
 TESTAGAIN       .FILL       #-121
+FORTYEIGHT      .FILL       #48
 
-P1PROMPT        .STRINGZ	"\nPLAYER1\n"
-P2PROMPT        .STRINGZ	"PLAYER2!\n"
+PPROMPT         .STRINGZ	"\nPLAYER"
+EXC             .STRINGZ    "!\n"
 BEGINPROMPT     .STRINGZ	"Enter two digits between 0-99, e.g. input 01 for 1.\n"
 GAMEPROMPT      .STRINGZ    "GUESS WHAT P1 ENTERED NOW!\n"
 INVALID         .STRINGZ	"? THAT'S INVALID INPUT! COME ON NOW!\n"
 TRYAGAIN        .STRINGZ    "YOU'VE USED UP A GUESS P2!\n"
-TOOHIGH         .STRINGZ    "TOO HIGH!\n"
-TOOLOW          .STRINGZ    "TOO LOW!\n"
-WINNER          .STRINGZ	"You won!\n"
+TOOHIGH         .STRINGZ    "Too big.\n"
+TOOLOW          .STRINGZ    "Too small.\n"
+WINS            .STRINGZ    " Wins"
+WIN1            .STRINGZ	" was the correct answer.\n"
+WIN2            .STRINGZ	" guess(es).\n"
 DONEPROMPT      .STRINGZ    "Game over! Enter 'y' to play again.\n"
-GOODBYE         .STRINGZ	"Goodbye!"
 
 .END
